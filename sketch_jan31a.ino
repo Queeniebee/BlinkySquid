@@ -4,7 +4,7 @@
 #define BRIGHTNESS  210
 #define DATA_PIN 8
 
-#define UPDATES_PER_SECOND 100
+#define UPDATES_PER_SECOND 500
 
 
 #define CSV 288
@@ -23,6 +23,7 @@ int MEGASTORM =  BRIGHTNESS;
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 int wavesData = 0;
+uint8_t lastSecond = 60;
 
 int waves[CSV] =
 { 111, 106, 118, 105, 105, 107, 111, 107,
@@ -238,29 +239,34 @@ void SetupPurpleAndBluePalette()
 }
 void ChangePalettePeriodically()
 {
-  uint8_t secondHand = (millis() / 1000) % 60;
-  static uint8_t lastSecond = 99;
+  // uint8_t secondHand = (millis() / 1000) % 60;
+  //      Serial.print(secondHand);
+  //           Serial.print(" ");
+  //      Serial.println(lastSecond);
 
-  if ( lastSecond != secondHand) {
-    lastSecond = secondHand;
-    for (int i = 0; i < CSV; i++) {
-      if ((waves[i] >= 38) && (waves[i] <= 60)) {
-//        SetupWaveColorPalette(); currentBlending = BLEND;
-          currentPalette = LavaColors_p; currentBlending = BLEND;
-      } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
-        currentPalette = CloudColors_p; currentBlending = BLEND;
-      }
-      else if ((waves[i] >= 91) && (waves[i] <= 120))  {
-        currentPalette = OceanColors_p; currentBlending = BLEND;
-      }
-      else if ((waves[i] >= 121) && (waves[i] <= 130))  {
-        SetupPurpleAndBluePalette(); currentBlending = BLEND;
-      }
-      else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
-        SetupTotallyRandomPalette(); currentBlending = BLEND;
-      }
+  //  if ( lastSecond != secondHand) {
+  //    lastSecond = secondHand;
+  //
+  //    if( secondHand % 10 == 0) {
+  for (int i = 0; i < CSV; i++) {
+    Serial.println(waves[i]);
+    if ((waves[i] >= 38) && (waves[i] <= 60)) {
+      currentPalette = LavaColors_p; currentBlending = NOBLEND;
+    } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
+      currentPalette = CloudColors_p; currentBlending = NOBLEND;
+    }
+    else if ((waves[i] >= 91) && (waves[i] <= 120))  {
+      currentPalette = OceanColors_p; currentBlending = NOBLEND;
+    }
+    else if ((waves[i] >= 121) && (waves[i] <= 130))  {
+      SetupPurpleAndBluePalette(); currentBlending = NOBLEND;
+    }
+    else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
+      SetupTotallyRandomPalette(); currentBlending = NOBLEND;
     }
   }
+  //    }
+  //  }
 }
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
@@ -272,15 +278,21 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
 }
 
 void setup() {
-  //  delay(3000); // setup guard
+  delay(3000); // setup guard
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  Serial.begin(9600);
 }
 
 
 void loop() {
 
-
-  ChangePalettePeriodically();
+  uint8_t secondHand = (millis() / 1000) % 60;
+  if ( lastSecond != secondHand) {
+    lastSecond = secondHand;
+    if ( secondHand % 10 == 0) {
+      ChangePalettePeriodically();
+    }
+  }
 
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1; /* motion speed */
@@ -288,10 +300,8 @@ void loop() {
   FillLEDsFromPaletteColors(startIndex);
 
   FastLED.show();
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
-
+  leds[i] = CRGB::Black;
+  delay(30);
 }
-
-
 
 
