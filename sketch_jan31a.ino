@@ -226,59 +226,54 @@ CRGB leds[NUM_LEDS];
 void setup() {
   delay(2000); // setup guard
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  //  FastLED.setBrightness(128);
-
-  // currentPalette = RainbowColors_p;
   currentBlending = BLEND;
+
 }
 
-void loop() {
+  void loop() {
 
-  SetupWaveColorPalette();
-  static uint8_t startIndex = 0;
-  startIndex = startIndex + 1; /* motion speed */
+    SetupWaveColorPalette();
+    static uint8_t startIndex = 0;
+    startIndex = startIndex + 1; /* motion speed */
 
-  FillLEDsFromPaletteColors( startIndex);
+    FillLEDsWithWeatherData(startIndex);
 
-  FastLED.show();
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
-
-
-  /*
-  for (int i = 0; i < CSV; i++) {
-
-    wavesData = map(waves[i], 38, 170, 0, 220);
-    for (int j = 0; j < NUM_LEDS; j++) {
-        CHSV hsv(wavesData, 255, 210);
-        hsv2rgb_spectrum( hsv, leds[j]);
-        leds[j] = hsv;
-        FastLED.show();
-        delay(40);
-
-        //        leds[j] = CRGB::Black;
-        //        FastLED.show();
-        //        delay(500);
-      }
+    FastLED.show();
+    FastLED.delay(1000 / UPDATES_PER_SECOND);
 
 
-  }
-  */
-}
+    /*
+    for (int i = 0; i < CSV; i++) {
 
-void FillLEDsFromPaletteColors( uint8_t colorIndex)
-{
+      wavesData = map(waves[i], 38, 170, 0, 220);
+      for (int j = 0; j < NUM_LEDS; j++) {
+          CHSV hsv(wavesData, 255, 210);
+          hsv2rgb_spectrum( hsv, leds[j]);
+          leds[j] = hsv;
+          FastLED.show();
+          delay(40);
 
-  uint8_t brightness = 255;
-  for (int i = 0; i < CSV; i++) {
-    
-    for ( int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = ColorFromPalette( currentPalette, colorIndex);
-      colorIndex += 3;
+          //        leds[j] = CRGB::Black;
+          //        FastLED.show();
+          //        delay(500);
+        }
+
+
     }
-    
-  }
+    */
   }
 
+  void FillLEDsWithWeatherData( uint8_t colorIndex)
+  {
+
+    //  uint8_t brightness = 255;
+  for(int j = 0; j < CSV; j++){
+      for ( int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = ColorFromPalette(currentPalette);
+        colorIndex += 3;
+      }
+  }
+  }
   void SetupWaveColorPalette()
   {
     CRGB calm; CRGB moderate; CRGB stormy; CRGB megastorm;
