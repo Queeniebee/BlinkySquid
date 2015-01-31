@@ -4,7 +4,7 @@
 #define BRIGHTNESS  210
 #define DATA_PIN 8
 
-#define UPDATES_PER_SECOND 500
+#define UPDATES_PER_SECOND 100
 
 
 #define CSV 288
@@ -23,7 +23,7 @@ int MEGASTORM =  BRIGHTNESS;
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 int wavesData = 0;
-uint8_t lastSecond = 60;
+uint8_t lastSecond = 99;
 
 int waves[CSV] =
 { 111, 106, 118, 105, 105, 107, 111, 107,
@@ -239,35 +239,25 @@ void SetupPurpleAndBluePalette()
 }
 void ChangePalettePeriodically()
 {
-  // uint8_t secondHand = (millis() / 1000) % 60;
-  //      Serial.print(secondHand);
-  //           Serial.print(" ");
-  //      Serial.println(lastSecond);
 
-  //  if ( lastSecond != secondHand) {
-  //    lastSecond = secondHand;
-  //
-  //    if( secondHand % 10 == 0) {
-  for (int i = 0; i < CSV; i++) {
-    Serial.println(waves[i]);
-    if ((waves[i] >= 38) && (waves[i] <= 60)) {
-      currentPalette = LavaColors_p; currentBlending = NOBLEND;
-    } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
-      currentPalette = CloudColors_p; currentBlending = NOBLEND;
-    }
-    else if ((waves[i] >= 91) && (waves[i] <= 120))  {
-      currentPalette = OceanColors_p; currentBlending = NOBLEND;
-    }
-    else if ((waves[i] >= 121) && (waves[i] <= 130))  {
-      SetupPurpleAndBluePalette(); currentBlending = NOBLEND;
-    }
-    else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
-      SetupTotallyRandomPalette(); currentBlending = NOBLEND;
-    }
-  }
-  //    }
-  //  }
-}
+    for (int i = 0; i < CSV; i++) {
+      Serial.println(waves[i]);
+      if ((waves[i] >= 38) && (waves[i] <= 60)) {
+        currentPalette = LavaColors_p;          currentBlending = BLEND;
+      } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
+        currentPalette = OceanColors_p;          currentBlending = BLEND; 
+
+      }
+      else if ((waves[i] >= 91) && (waves[i] <= 120))  {
+        currentPalette = CloudColors_p;           currentBlending = BLEND; 
+      }
+      else if ((waves[i] >= 121) && (waves[i] <= 130))  {
+        SetupTotallyRandomPalette();              currentBlending = BLEND; 
+      }
+      else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
+       SetupPurpleAndBluePalette();             currentBlending = BLEND;  
+      }
+}}
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {
@@ -285,13 +275,20 @@ void setup() {
 
 
 void loop() {
+  int val = analogRead(0);
+  int numLedsToLight = map(val, 600, 800, 0, NUM_LEDS);
 
-  uint8_t secondHand = (millis() / 1000) % 60;
-  if ( lastSecond != secondHand) {
-    lastSecond = secondHand;
-    if ( secondHand % 10 == 0) {
-      ChangePalettePeriodically();
+  if (val > 600) {
+    FastLED.clear();
+    for (int led = 0; led < numLedsToLight; led++) {
+      leds[led] = CRGB::Red;
     }
+    FastLED.show();
+  }
+  else {
+
+    ChangePalettePeriodically();
+
   }
 
   static uint8_t startIndex = 0;
@@ -300,8 +297,7 @@ void loop() {
   FillLEDsFromPaletteColors(startIndex);
 
   FastLED.show();
-  leds[i] = CRGB::Black;
-  delay(30);
+  delay(2000 / UPDATES_PER_SECOND);
 }
 
 
