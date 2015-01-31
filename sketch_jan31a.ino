@@ -1,11 +1,11 @@
 #include "FastLED.h"
 // How many leds in your strip?
 #define NUM_LEDS 60
-
-// For led chips like Neopixels, which have a data line, ground, and power, you just
-// need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
-// ground, and power), like the LPD8806 define both DATA_PIN and CLOCK_PIN
+#define BRIGHTNESS  64
 #define DATA_PIN 8
+
+#define UPDATES_PER_SECOND 100
+
 
 #define CSV 288
 /*
@@ -19,7 +19,8 @@
 //    CHSV hsv( 180, 255, 100);            //MODERATE
 //    CHSV hsv( 0, 255, 100);              //STORMY
 //    CHSV hsv( 213, 255, 210);           //MEGASTORM
-
+CRGBPalette16 currentPalette;
+TBlendType    currentBlending;
 int wavesData = 0;
 
 //int calm = 0;
@@ -27,15 +28,6 @@ int wavesData = 0;
 //int stormy = 0;
 //int megastorm = 0;
 
-int     Ipos   = NUM_LEDS / 2; // position of the "integer-based bar"
-int     Idelta = 1; // how many pixels to move the Integer Bar
-uint8_t Ihue = 20; // color for Integer Bar
-
-int     F16pos = 0; // position of the "fraction-based bar"
-int     F16delta = 1; // how many 16ths of a pixel to move the Fractional Bar
-uint8_t Fhue = 20; // color for Fractional Bar
-
-int Width  = 4; // width of each light bar, in whole pixels
 int InterframeDelay = 40;
 
 
@@ -221,31 +213,9 @@ int waves[CSV] =
   66,
   70,
   72,
-  76,
-  70,
-  79,
-  79,
-  81,
-  80,
-  84,
-  87,
-  83,
-  83,
-  80,
-  81,
-  85,
-  77,
-  84,
-  92,
-  96,
-  116,
-  88,
-  106,
-  98,
-  110,
-  86,
-  92,
-  101
+  76, 70, 79, 79, 81, 80, 84, 87,
+  83, 83, 80, 81, 85, 77, 84, 92, 96,
+  116, 88, 106, 98, 110, 86, 92, 101
 };
 
 uint8_t waveVal = 0;
@@ -256,71 +226,23 @@ CRGB leds[NUM_LEDS];
 void setup() {
   delay(2000); // setup guard
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  FastLED.setBrightness(128);
+  //  FastLED.setBrightness(128);
+
+  // currentPalette = RainbowColors_p;
+  currentBlending = BLEND;
 }
-
-void drawIntegerBar( int intpos, int width, uint8_t hue)
-{
-  int i = intpos; // start drawing at "I"
-  for ( int n = 0; n < width; n++) {
-    leds[i] += CHSV( hue, 255, 255);
-    i++;
-    if ( i == NUM_LEDS) i = 0; // wrap around
-  }
-}
-
-void drawFractionalBar( int pos16, int width, uint8_t hue)
-{
-  int i = pos16 / 16; // convert from pos to raw pixel number
-  uint8_t frac = pos16 & 0x0F; // extract the 'factional' part of the position
-  uint8_t firstpixelbrightness = 255 - (frac * 16);
-  uint8_t lastpixelbrightness  = 255 - firstpixelbrightness;
-  uint8_t bright;
-  for ( int n = 0; n <= width; n++) {
-    if ( n == 0) {
-      // first pixel in the bar
-      bright = firstpixelbrightness;
-    } else if ( n == width ) {
-      // last pixel in the bar
-      bright = lastpixelbrightness;
-    } else {
-      // middle pixels
-      bright = 255;
-    }
-
-    leds[i] += CHSV( hue, 255, bright);
-    i++;
-    if ( i == NUM_LEDS) i = 0; // wrap around
-  }
-}
-
 
 void loop() {
 
-  F16pos += F16delta;
-  if ( F16pos >= (NUM_LEDS * 16)) {
-    F16pos -= (NUM_LEDS * 16);
-  }
+  SetupWaveColorPalette();
+  static uint8_t startIndex = 0;
+  startIndex = startIndex + 1; /* motion speed */
 
-  static byte countdown = 0;
-  if ( countdown == 0) {
-    countdown = 16; // reset countdown
-    Ipos += 1;
-    // wrap around at end
-    if ( Ipos >= NUM_LEDS) {
-      Ipos -= NUM_LEDS;
-    }
-  }
-  // countdown is decremented every time through the loop
-  countdown -= 1;
+  FillLEDsFromPaletteColors( startIndex);
 
-  memset8( leds, 0, NUM_LEDS * sizeof(CRGB));
-
-  drawIntegerBar( Ipos, Width, Ihue);
-  // draw the Fractional Bar, length=4px, hue=180
-  drawFractionalBar( F16pos, Width, Fhue);
   FastLED.show();
-  delay(InterframeDelay);
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
+
 
   /*
   for (int i = 0; i < CSV; i++) {
@@ -342,3 +264,55 @@ void loop() {
   }
   */
 }
+
+void FillLEDsFromPaletteColors( uint8_t colorIndex)
+{
+
+  uint8_t brightness = 255;
+  for (int i = 0; i < CSV; i++) {
+    
+    for ( int i = 0; i < NUM_LEDS; i++) {
+      leds[i] = ColorFromPalette( currentPalette, colorIndex);
+      colorIndex += 3;
+    }
+    
+  }
+  }
+
+  void SetupWaveColorPalette()
+  {
+    CRGB calm; CRGB moderate; CRGB stormy; CRGB megastorm;
+
+    for (int i = 0; i < CSV; i++) {
+      wavesData = map(waves[i], 38, 170, 0, 220);
+      CHSV hsv(wavesData, 255, 210);
+      hsv2rgb_spectrum( hsv, leds[i]);
+      leds[i] = hsv;
+      //CALM
+      if ( (hsv >= 90) && (hsv <= 110) ) {
+        CRGB calm = leds[i];
+
+      }
+      else if ( (hsv >= 170) && (hsv <= 190) ) {
+        //MODERATE
+        CRGB moderate  = hsv;
+
+      }
+      else if ( (hsv >= 0) && (hsv <= 30) ) {
+        //STORMY
+        CRGB stormy  = hsv;
+      }
+
+      //MEGASTORM
+      else if ( (hsv >= 200) && (hsv <= 220) ) {
+        CRGB megastorm = hsv;
+      }
+
+      currentPalette = CRGBPalette16(
+                         calm, calm,  moderate, moderate,
+                         stormy, stormy, megastorm,  megastorm,
+                         calm,  calm,  moderate,  moderate,
+                         stormy, stormy, megastorm,  megastorm );
+    }
+  }
+
