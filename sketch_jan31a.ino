@@ -21,12 +21,8 @@ int MEGASTORM =  BRIGHTNESS;
 //    CHSV hsv( 213, 255, 210);           //MEGASTORM
 
 CRGBPalette16 currentPalette;
+TBlendType    currentBlending;
 int wavesData = 0;
-
-//int calm = 0;
-//int moderate = 0;
-//int stormy = 0;
-//int megastorm = 0
 
 int waves[CSV] =
 { 111, 106, 118, 105, 105, 107, 111, 107,
@@ -220,121 +216,80 @@ uint8_t waveVal = 0;
 // Define the array of leds
 CRGB leds[NUM_LEDS];
 
-void SetupWaveColorPalette()
+void SetupTotallyRandomPalette()
 {
-  CRGB calm; CRGB moderate; CRGB stormy; CRGB megastorm;
-
-  for (int i = 0; i < CSV; i++) {
-    wavesData = map(waves[i], 38, 170, 0, 220);
-    //CALM
-    if ( (wavesData >= 90) && (wavesData <= 110) ) {
-      CHSV hsv(wavesData, 255, BRIGHTNESS+45);
-      hsv2rgb_spectrum( hsv, leds[i]);
-      leds[i] = hsv;
-      CRGB calm = leds[i];
-
-    }
-    else if ( (wavesData >= 170) && (wavesData <= 190) ) {
-      //MODERATE
-      CHSV hsv(wavesData, 255, BRIGHTNESS-110);
-      hsv2rgb_spectrum( hsv, leds[i]);
-      leds[i] = hsv;
-      CRGB moderate  = hsv;
-
-    }
-    else if ( (wavesData >= 0) && (wavesData <= 30) ) {
-      //STORMY
-      CHSV hsv(wavesData, 255, BRIGHTNESS-110);
-      hsv2rgb_spectrum( hsv, leds[i]);
-      leds[i] = hsv;
-      CRGB stormy  = hsv;
-    }
-
-    //MEGASTORM
-    else if ( (wavesData >= 200) && (wavesData <= 220) ) {
-      CHSV hsv(wavesData, 255, BRIGHTNESS);
-      hsv2rgb_spectrum( hsv, leds[i]);
-      leds[i] = hsv;
-      CRGB megastorm = hsv;
-    }
-
-    currentPalette = CRGBPalette16(
-                       calm, calm,  moderate, moderate,
-                       stormy, stormy, megastorm,  megastorm,
-                       calm,  calm,  moderate,  moderate,
-                       stormy, stormy, megastorm,  megastorm );
+  for ( int i = 0; i < 16; i++) {
+    //    currentPalette[i] = CHSV( random8(), 255, random8());
+    currentPalette[i] = CHSV(random8(120, 200), 255, random8());
   }
 }
 
+void SetupPurpleAndBluePalette()
+{
+  CRGB purple = CHSV( HUE_PURPLE, 255, 255);
+  CRGB blue  = CHSV( HUE_BLUE, 255, 255);
+  CRGB black  = CRGB::Black;
+
+  currentPalette = CRGBPalette16(
+                     blue,  blue,  black,  black,
+                     purple, purple, black,  black,
+                     blue,  blue,  black,  black,
+                     purple, purple, black,  black );
+}
 void ChangePalettePeriodically()
 {
   uint8_t secondHand = (millis() / 1000) % 60;
   static uint8_t lastSecond = 99;
-  
-  if( lastSecond != secondHand) {
-    lastSecond = secondHand;
 
-    if( secondHand == 0)  { SetupPurpleAndBluePalette();             currentBlending = BLEND; }
-    if( secondHand ==15)  { SetupTotallyRandomPalette();              currentBlending = BLEND; }
-    if( secondHand == 25)  { SetupBlackAndWhiteStripedPalette();       currentBlending = NOBLEND; }
-    if( secondHand == 35)  { SetupBlackAndWhiteStripedPalette();       currentBlending = BLEND; }
-    if( secondHand == 40)  { currentPalette = CloudColors_p;           currentBlending = BLEND; }
-    if( secondHand == 50)  { currentPalette = OceanColors_p          currentBlending = BLEND; }
-     if( secondHand == 70)  { currentPalette = LavaColors_p          currentBlending = BLEND; }
-    if( secondHand == 85)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
-    if( secondHand == 100)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = BLEND; }
+  if ( lastSecond != secondHand) {
+    lastSecond = secondHand;
+    for (int i = 0; i < CSV; i++) {
+      if ((waves[i] >= 38) && (waves[i] <= 60)) {
+//        SetupWaveColorPalette(); currentBlending = BLEND;
+          currentPalette = LavaColors_p; currentBlending = BLEND;
+      } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
+        currentPalette = CloudColors_p; currentBlending = BLEND;
+      }
+      else if ((waves[i] >= 91) && (waves[i] <= 120))  {
+        currentPalette = OceanColors_p; currentBlending = BLEND;
+      }
+      else if ((waves[i] >= 121) && (waves[i] <= 130))  {
+        SetupPurpleAndBluePalette(); currentBlending = BLEND;
+      }
+      else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
+        SetupTotallyRandomPalette(); currentBlending = BLEND;
+      }
+    }
+  }
+}
+
+void FillLEDsFromPaletteColors( uint8_t colorIndex)
+{
+  for ( int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = ColorFromPalette(currentPalette, colorIndex, BRIGHTNESS, BLEND);
+    colorIndex += 3;
   }
 }
 
 void setup() {
-//  delay(3000); // setup guard
+  //  delay(3000); // setup guard
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  //  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
-  SetupWaveColorPalette();
 }
 
-/*void FillLEDsWithWeatherData( uint8_t colorIndex)
-{
-
-  //  uint8_t brightness = 255;
-  for ( int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = ColorFromPalette(currentPalette, colorIndex, BRIGHTNESS, BLEND);
-    colorIndex += 1;
-  }
-} */
 
 void loop() {
 
+
+  ChangePalettePeriodically();
+
   static uint8_t startIndex = 0;
-  startIndex = startIndex + 3; /* motion speed */
+  startIndex = startIndex + 1; /* motion speed */
 
-  //    FillLEDsWithWeatherData(startIndex);
-
-  fill_palette( leds, NUM_LEDS,
-                startIndex, 2,
-                currentPalette, 255, BLEND);
+  FillLEDsFromPaletteColors(startIndex);
 
   FastLED.show();
-  FastLED.delay(1000/UPDATES_PER_SECOND);
-  /*
-  for (int i = 0; i < CSV; i++) {
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
 
-    wavesData = map(waves[i], 38, 170, 0, 220);
-    for (int j = 0; j < NUM_LEDS; j++) {
-        CHSV hsv(wavesData, 255, 210);
-        hsv2rgb_spectrum( hsv, leds[j]);
-        leds[j] = hsv;
-        FastLED.show();
-        delay(40);
-
-        //        leds[j] = CRGB::Black;
-        //        FastLED.show();
-        //        delay(500);
-      }
-
-
-  }
-  */
 }
 
 
