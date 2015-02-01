@@ -261,6 +261,9 @@ void ChangePalettePeriodically()
     else if ( (waves[wavesIndex] >= 151) && (waves[wavesIndex] <= 170))  {
       SetupPurpleAndBluePalette();             currentBlending = BLEND;
 
+    } else {
+      wavesIndex = 0;
+    
     }
 
     //  for (int i = 0; i < CSV; i++) {
