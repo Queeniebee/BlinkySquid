@@ -6,7 +6,6 @@
 
 #define UPDATES_PER_SECOND 100
 
-
 #define CSV 288
 
 int CALM =     255;
@@ -23,7 +22,9 @@ int MEGASTORM =  BRIGHTNESS;
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 int wavesData = 0;
+int wavesIndex = 0;
 uint8_t lastSecond = 99;
+long lastTimeCalled = 0;
 
 int waves[CSV] =
 { 111, 106, 118, 105, 105, 107, 111, 107,
@@ -240,24 +241,46 @@ void SetupPurpleAndBluePalette()
 void ChangePalettePeriodically()
 {
 
-    for (int i = 0; i < CSV; i++) {
-      Serial.println(waves[i]);
-      if ((waves[i] >= 38) && (waves[i] <= 60)) {
-        currentPalette = LavaColors_p;          currentBlending = BLEND;
-      } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
-        currentPalette = OceanColors_p;          currentBlending = BLEND; 
+  if (wavesIndex < CSV) {
 
-      }
-      else if ((waves[i] >= 91) && (waves[i] <= 120))  {
-        currentPalette = CloudColors_p;           currentBlending = BLEND; 
-      }
-      else if ((waves[i] >= 121) && (waves[i] <= 130))  {
-        SetupTotallyRandomPalette();              currentBlending = BLEND; 
-      }
-      else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
-       SetupPurpleAndBluePalette();             currentBlending = BLEND;  
-      }
-}}
+    wavesIndex++;
+    Serial.println(waves[wavesIndex]);
+
+    if ((waves[wavesIndex] >= 38) && (waves[wavesIndex] <= 60)) {
+
+      currentPalette = LavaColors_p;          currentBlending = BLEND;
+    } else if ((waves[wavesIndex] >= 61) && (waves[wavesIndex] <= 90))  {
+      currentPalette = OceanColors_p;          currentBlending = BLEND;
+    }
+    else if ((waves[wavesIndex] >= 91) && (waves[wavesIndex] <= 120))  {
+      currentPalette = CloudColors_p;           currentBlending = BLEND;
+    }
+    else if ((waves[wavesIndex] >= 121) && (waves[wavesIndex] <= 150))  {
+      SetupTotallyRandomPalette();              currentBlending = BLEND;
+    }
+    else if ( (waves[wavesIndex] >= 151) && (waves[wavesIndex] <= 170))  {
+      SetupPurpleAndBluePalette();             currentBlending = BLEND;
+
+    }
+
+    //  for (int i = 0; i < CSV; i++) {
+    //    if ((waves[i] >= 38) && (waves[i] <= 60)) {
+    //      currentPalette = LavaColors_p;          currentBlending = BLEND;
+    //    } else if ((waves[i] >= 61) && (waves[i] <= 90))  {
+    //      currentPalette = OceanColors_p;          currentBlending = BLEND;
+    //    }
+    //    else if ((waves[i] >= 91) && (waves[i] <= 120))  {
+    //      currentPalette = CloudColors_p;           currentBlending = BLEND;
+    //    }
+    //    else if ((waves[i] >= 121) && (waves[i] <= 130))  {
+    //      SetupTotallyRandomPalette();              currentBlending = BLEND;
+    //    }
+    //    else if ( (waves[i] >= 131) && (waves[i] <= 170))  {
+    //      SetupPurpleAndBluePalette();             currentBlending = BLEND;
+    //    }
+    //  }
+  }
+}
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {
@@ -270,6 +293,7 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
 void setup() {
   delay(3000); // setup guard
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  lastTimeCalled = millis();
   Serial.begin(9600);
 }
 
@@ -286,8 +310,12 @@ void loop() {
     FastLED.show();
   }
   else {
+    if (millis() - lastTimeCalled > 100) {
+      Serial.println("jaskdj");
+      lastTimeCalled = millis();
+      ChangePalettePeriodically();
 
-    ChangePalettePeriodically();
+    }
 
   }
 
