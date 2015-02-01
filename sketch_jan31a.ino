@@ -1,7 +1,7 @@
 #include "FastLED.h"
 // How many leds in your strip?
-#define NUM_LEDS 19
-#define BRIGHTNESS  210
+#define NUM_LEDS 48
+#define BRIGHTNESS  150
 #define DATA_PIN 8
 
 #define UPDATES_PER_SECOND 100
@@ -298,14 +298,15 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   lastTimeCalled = millis();
   Serial.begin(9600);
+  
 }
 
 
 void loop() {
   int val = analogRead(0);
   int numLedsToLight = map(val, 600, 800, 0, NUM_LEDS);
-
-  if (val > 600) {
+ Serial.println(val);
+  if (val > 650) {
     FastLED.clear();
     for (int led = 0; led < numLedsToLight; led++) {
       leds[led] = CRGB::Red;
@@ -314,21 +315,21 @@ void loop() {
   }
   else {
     if (millis() - lastTimeCalled > 100) {
-      Serial.println("jaskdj");
+     
       lastTimeCalled = millis();
       ChangePalettePeriodically();
-
-    }
-
-  }
-
-  static uint8_t startIndex = 0;
+static uint8_t startIndex = 0;
   startIndex = startIndex + 1; /* motion speed */
 
   FillLEDsFromPaletteColors(startIndex);
 
   FastLED.show();
   delay(2000 / UPDATES_PER_SECOND);
+    }
+
+  }
+
+  
 }
 
 
